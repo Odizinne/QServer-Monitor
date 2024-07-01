@@ -1,7 +1,7 @@
 import paramiko
 import configparser
 import os
-from PyQt5 import QtWidgets, uic, QtGui, QtCore
+from PyQt6 import QtWidgets, uic, QtGui, QtCore
 
 class SSHWorker(QtCore.QThread):
     data_ready = QtCore.pyqtSignal(object)
@@ -62,7 +62,6 @@ class MainWindow(QtWidgets.QMainWindow):
         ui_path = os.path.join(script_dir, 'design.ui')
         uic.loadUi(ui_path, self)
         self.setWindowTitle("QServer Monitor")
-        script_dir = os.path.dirname(os.path.realpath(__file__))
         config_path = os.path.join(script_dir, 'config.ini')
         self.config = configparser.ConfigParser()
         self.config.read(config_path)
@@ -81,63 +80,24 @@ class MainWindow(QtWidgets.QMainWindow):
         total_ram, used_ram, cpu_load, total_storage, used_storage, service_statuses, distro_name, kernel_version, uptime = data
 
         self.distroLabel.setText(distro_name)
-        self.distroLabel.setStyleSheet("font-weight: bold;")
-        self.kernelLabel.setText(kernel_version)
-        self.kernelLabel.setStyleSheet("font-weight: bold;")
         self.uptimeLabel.setText(uptime)
-        self.uptimeLabel.setStyleSheet("font-weight: bold;")
 
-        self.ramProgressBar.setValue(int((used_ram / total_ram) * 100))
-        self.ramLabel.setText("RAM")
-        self.ramLabel.setStyleSheet("font-weight: bold;")
+        ram_usage_percentage = int((used_ram / total_ram) * 100)
+        self.ramProgressBar.setValue(ram_usage_percentage)
+        self.ramProgressBar.setTextVisible(False)
 
-        self.ramProgressBar.setFormat(f"{used_ram}M / {total_ram}M")
-        self.ramProgressBar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid grey;
-                border-radius: 5px;
-                text-align: center;
-                font-weight: bold;
-            }
-            QProgressBar::chunk {
-                background-color: cyan;
-                width: 20px;
-            }
-        """)
+        self.ramValueLabel.setText(f"{used_ram}M / {total_ram}M ({ram_usage_percentage}%)")
 
         self.cpuProgressBar.setValue(round(cpu_load))
-        self.cpuLabel.setText("CPU")
-        self.cpuLabel.setStyleSheet("font-weight: bold;")
-        self.cpuProgressBar.setFormat(f"{round(cpu_load)}%")
-        self.cpuProgressBar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid grey;
-                border-radius: 5px;
-                text-align: center;
-                font-weight: bold;
-            }
-            QProgressBar::chunk {
-                background-color: #D8BFD8;
-                width: 20px;
-            }
-        """)
+        self.cpuProgressBar.setTextVisible(False)
 
-        self.storageProgressBar.setValue(int((float(used_storage[:-1]) / float(total_storage[:-1])) * 100))
-        self.storageLabel.setText("SSD")
-        self.storageLabel.setStyleSheet("font-weight: bold;")
-        self.storageProgressBar.setFormat(f"{used_storage} / {total_storage}")
-        self.storageProgressBar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid grey;
-                border-radius: 5px;
-                text-align: center;
-                font-weight: bold;
-            }
-            QProgressBar::chunk {
-                background-color: pink;
-                width: 20px;
-            }
-        """)
+        self.cpuValueLabel.setText(f"{round(cpu_load)}%")
+
+        storage_usage_percentage = int((float(used_storage[:-1]) / float(total_storage[:-1])) * 100)
+        self.storageProgressBar.setValue(storage_usage_percentage)
+        self.storageProgressBar.setTextVisible(False)
+
+        self.storageValueLabel.setText(f"{used_storage} / {total_storage} ({storage_usage_percentage}%)")
 
         self.tableWidget.setRowCount(len(service_statuses))
         self.tableWidget.setColumnCount(2)
@@ -151,27 +111,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 status_item.setForeground(QtGui.QBrush(QtGui.QColor('red')))
             self.tableWidget.setItem(i, 1, status_item)
 
-        self.tableWidget.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-        self.tableWidget.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
-        self.tableWidget.setStyleSheet("""
-            QTableWidget {
-                gridline-color: #E8E8E8;
-                background-color: #FFFFFF;
-            }
-            QTableWidget::item {
-                padding: 5px;
-            }
-            QHeaderView::section {
-                background-color: #F5F5F5;
-                padding: 5px;
-                border: 1px solid #E8E8E8;
-                font-weight: bold;
-            }
-            QTableWidget::item:selected {
-            }
-        """)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(0, QtWidgets.QHeaderView.ResizeMode.Stretch)
+        self.tableWidget.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
 
-app = QtWidgets.QApplication([])
-window = MainWindow()
-window.show()
-app.exec_()
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication([])
+    window = MainWindow()
+    window.show()
+    app.exec()
